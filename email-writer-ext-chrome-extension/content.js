@@ -1,0 +1,307 @@
+// console.log("Email Writer Extension - Content Script Loaded");
+
+// function createAIButton() {
+//    const button = document.createElement('div');
+//    button.className = 'T-I J-J5-Ji aoO v7 T-I-atl L3';
+//    button.style.marginRight = '8px';
+//    button.innerHTML = 'AI Reply';
+//    button.setAttribute('role','button');
+//    button.setAttribute('data-tooltip','Generate AI Reply');
+//    return button;
+// }
+
+// function getEmailContent() {
+//     const selectors = [
+//         '.h7',
+//         '.a3s.aiL',
+//         '.gmail_quote',
+//         '[role="presentation"]'
+//     ];
+//     for (const selector of selectors) {
+//         const content = document.querySelector(selector);
+//         if (content) {
+//             return content.innerText.trim();
+//         }
+//         return '';
+//     }
+// }
+
+
+// function findComposeToolbar() {
+//     const selectors = [
+//         '.btC',
+//         '.aDh',
+//         '[role="toolbar"]',
+//         '.gU.Up'
+//     ];
+//     for (const selector of selectors) {
+//         const toolbar = document.querySelector(selector);
+//         if (toolbar) {
+//             return toolbar;
+//         }
+//         return null;
+//     }
+// }
+
+// function injectButton() {
+//     const existingButton = document.querySelector('.ai-reply-button');
+//     if (existingButton) existingButton.remove();
+
+//     const toolbar = findComposeToolbar();
+//     if (!toolbar) {
+//         console.log("Toolbar not found");
+//         return;
+//     }
+
+//     console.log("Toolbar found, creating AI button");
+//     const button = createAIButton();
+//     button.classList.add('ai-reply-button');
+
+//     button.addEventListener('click', async () => {
+//         try {
+//             button.innerHTML = 'Generating...';
+//             button.disabled = true;
+
+//             const emailContent = getEmailContent();
+//             const response = await fetch('http://localhost:9090/api/email/generate', {
+//                 method: 'POST',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                 },
+//                 body: JSON.stringify({
+//                     emailContent: emailContent,
+//                     tone: "professional"
+//                 })
+//             });
+
+//             if (!response.ok) {
+//                 throw new Error('API Request Failed');
+//             }
+
+//             const generatedReply = await response.text();
+//             const composeBox = document.querySelector('[role="textbox"][g_editable="true"]');
+
+//             if (composeBox) {
+//                 composeBox.focus();
+//                 document.execCommand('insertText', false, generatedReply);
+//             } else {
+//                 console.error('Compose box was not found');
+//             }
+//         } catch (error) {
+//             console.error(error);
+//             alert('Failed to generate reply');
+//         } finally {
+//             button.innerHTML = 'AI Reply';
+//             button.disabled =  false;
+//         }
+//     });
+
+//     toolbar.insertBefore(button, toolbar.firstChild);
+// }
+
+// const observer = new MutationObserver((mutations) => {
+//     for(const mutation of mutations) {
+//         const addedNodes = Array.from(mutation.addedNodes);
+//         const hasComposeElements = addedNodes.some(node =>
+//             node.nodeType === Node.ELEMENT_NODE && 
+//             (node.matches('.aDh, .btC, [role="dialog"]') || node.querySelector('.aDh, .btC, [role="dialog"]'))
+//         );
+
+//         if (hasComposeElements) {
+//             console.log("Compose Window Detected");
+//             setTimeout(injectButton, 500);
+//         }
+//     }
+// });
+
+
+// observer.observe(document.body, {
+//     childList: true,
+//     subtree: true
+// });
+
+
+
+
+
+
+
+
+console.log("Email Writer Extension - Content Script Loaded");
+
+/* -------------------- Create AI Button -------------------- */
+
+function createAIButton() {
+
+    const button = document.createElement("button");
+
+    button.className = "ai-reply-button";
+    button.innerHTML = "🤖 AI Reply";
+    button.type = "button";
+
+    return button;
+}
+
+/* -------------------- Read Email -------------------- */
+
+function getEmailContent() {
+
+    const selectors = [
+        ".a3s.aiL",
+        ".gmail_quote",
+        "[data-message-id]",
+        '[role="listitem"]'
+    ];
+
+    for (const selector of selectors) {
+
+        const element = document.querySelector(selector);
+
+        if (element) {
+            return element.innerText.trim();
+        }
+    }
+
+    return "";
+}
+
+/* -------------------- API Call -------------------- */
+
+async function handleAIReply(button) {
+
+    try {
+
+        button.innerHTML = "⏳ Generating...";
+        button.disabled = true;
+
+        const emailContent = getEmailContent();
+
+        const response = await fetch(
+            "http://localhost:9090/api/email/generate",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    emailContent: emailContent,
+                    tone: "Professional"
+                })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("API Error : " + response.status);
+        }
+
+        const generatedReply = await response.text();
+
+        const composeBox = document.querySelector(
+            '[role="textbox"][g_editable="true"]'
+        );
+
+        if (composeBox) {
+
+            composeBox.focus();
+
+            document.execCommand(
+                "insertText",
+                false,
+                generatedReply
+            );
+
+        } else {
+
+            alert("Compose box not found");
+
+        }
+
+    }
+    catch (error) {
+
+        console.error(error);
+        alert(error.message);
+
+    }
+    finally {
+
+        button.innerHTML = "🤖 AI Reply";
+        button.disabled = false;
+
+    }
+
+}
+
+/* -------------------- Inject Button -------------------- */
+
+function injectButton() {
+
+    // Prevent duplicate buttons
+    if (document.querySelector(".ai-reply-button"))
+        return;
+
+    // Find Send button
+    const sendButton = [...document.querySelectorAll('[role="button"]')]
+        .find(btn => btn.innerText.trim() === "Send");
+
+    if (!sendButton)
+        return;
+
+    // Create wrapper
+    const wrapper = document.createElement("div");
+
+    wrapper.style.display = "inline-flex";
+    wrapper.style.marginLeft = "10px";
+    wrapper.style.alignItems = "center";
+
+    // Create AI Button
+    const aiButton = createAIButton();
+
+    aiButton.addEventListener("click", () => {
+
+        handleAIReply(aiButton);
+
+    });
+
+    wrapper.appendChild(aiButton);
+
+    // Insert AFTER Send button container
+    sendButton.parentElement.parentElement.insertAdjacentElement(
+        "afterend",
+        wrapper
+    );
+
+    console.log("AI Button Injected");
+
+}
+
+/* -------------------- Observe Gmail -------------------- */
+
+const observer = new MutationObserver(() => {
+
+    const composeBox = document.querySelector(
+        '[role="textbox"][g_editable="true"]'
+    );
+
+    if (composeBox) {
+
+        injectButton();
+
+    }
+
+});
+
+observer.observe(document.body, {
+
+    childList: true,
+    subtree: true
+
+});
+
+/* -------------------- Initial Load -------------------- */
+
+setInterval(() => {
+
+    injectButton();
+
+}, 1500);

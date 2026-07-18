@@ -1,0 +1,39 @@
+.ai-reply-button{
+
+    height:36px;
+
+    padding:0 18px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:#1a73e8;
+
+    color:#fff;
+
+    font-size:14px;
+
+    font-weight:500;
+
+    font-family:Roboto,Arial,sans-serif;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+.ai-reply-button:hover{
+
+    background:#1669c1;
+
+}
+
+.ai-reply-button:disabled{
+
+    opacity:.7;
+
+    cursor:not-allowed;
+
+}

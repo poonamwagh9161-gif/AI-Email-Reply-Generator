@@ -143,7 +143,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "http://localhost:9090/api/email/generate",
+        "https://ai-email-reply-generator-16w6.onrender.com/api/email/generate",
         {
           emailContent,
           tone,
